@@ -67,6 +67,8 @@ public class Graph {
             nodeList.add(node);
             dfs(node, node, nodeList);
         }
+
+        //sort
         Collections.sort(path, new Comparator<LinkedHashSet<Integer>>() {
             @Override
             public int compare(LinkedHashSet<Integer> o1, LinkedHashSet<Integer> o2) {

@@ -22,14 +22,15 @@ public class Graph {
     public Edge[] edges = new Edge[MaxEdges];
     public int cnt;
     boolean[] visitedEdges;
-
-    public List<LinkedHashSet<Integer>> path;
+    private int minNode = -1;
+    public List<List<Integer>> path;
     private String inputFileName;
     private Logger logger;
     final private int MinLen = 3;  //环的最小长度
     final private int MaxLen = 7;  //环的最大长度
     Map<Integer, Integer> head = new HashMap<>();
     Map<Integer, Boolean> inLoop;
+    Set<Integer> visited = new HashSet<>();
 //    Map<Integer, LinkedHashSet<Integer>> loop;  //每个点的环路
     Set<Integer> endNodesSet;
     public Graph(String inputFileName){
@@ -45,7 +46,7 @@ public class Graph {
 
         visitedEdges = new boolean[cnt];
         path = new LinkedList<>();
-        inLoop = new HashMap<>();
+//        inLoop = new HashMap<>();
     }
 
     //读取文件，按照链式前向星的方法为图添加边
@@ -73,77 +74,87 @@ public class Graph {
 
     public void findLoop(){
         for (int node : head.keySet()) {
-            if (!endNodesSet.contains(node)) continue;
+            if (!endNodesSet.contains(node) || visited.contains(node)) continue;
             LinkedHashSet<Integer> nodeList = new LinkedHashSet<>();
             nodeList.add(node);
             dfs(node, node, nodeList);
         }
+        sort(path);
+    }
 
-        //sort
-        Collections.sort(path, new Comparator<LinkedHashSet<Integer>>() {
+    private void sort(List<List<Integer>> path) {
+        Collections.sort(path, new Comparator<List<Integer>>() {
             @Override
-            public int compare(LinkedHashSet<Integer> o1, LinkedHashSet<Integer> o2) {
-                if (o1.size() != o2.size()) return o1.size() - o2.size();
+            public int compare(List<Integer> o1, List<Integer> o2) {
+                if (o1.size() != o2.size()) return o1.size()-o2.size();
                 else {
-                    Iterator<Integer> it1, it2;
-                    it1 = o1.iterator();
-                    it2 = o2.iterator();
-                    while (it1.hasNext() && it2.hasNext()) {
-                        int n = it1.next() - it2.next();
-                        if (n != 0) return n;
+                    for (int i = 0; i < o1.size(); i++) {
+                        if (o1.get(i) != o2.get(i) ) return o1.get(i) - o2.get(i);
                     }
-                    return 0;
                 }
+                return 0;
             }
         });
     }
+
     //dfs寻找长度为3~7的环路
     public void dfs(int root, int node, LinkedHashSet<Integer> nodeList) {
         if (!head.containsKey(node)) return;
-
         int index = head.get(node);
-        if (visitedEdges[index]) return ;
+//        if (visitedEdges[index]) return ;
+        if (index < 0) return;
         while (index != -1) {
-//            if (inLoop.containsKey(node)) {
-//                for (LinkedHashSet<Integer> ls : path) {
-//                    if (ls.contains(node)) {
-//                        LinkedHashSet list = new LinkedHashSet();
-//                        merge(node, ls, nodeList, list);
-//                        path.add(list);
-//                        return;
-//                    }
-//                }
-//            }
             Edge e = edges[index];
             visitedEdges[index] = true;
             if (nodeList.contains(e.end)) {
-                LinkedHashSet<Integer> list = new LinkedHashSet<>();
+                List<Integer> list = new ArrayList<>(7);
                 boolean flag = false;
                 for (int x : nodeList) {  //此处可加入路径长度计数器，避免list的构建
-                    if (x == e.end) {
+                    if (!flag && x == e.end) {
                         flag = true;
                     }
                     if (flag) {
                         list.add(x);
-                        inLoop.put(x, true);
+                        visited.add(x);
                     }
                 }
                 if (list.size()<=MaxLen && list.size()>=MinLen) {
-                    path.add(list);
+                    path.add(change(list));
+                    visitedEdges[index] = false;
                 } else {
-                    nodeList.add(e.end);
-                    dfs(root, e.end, nodeList);
+                    visitedEdges[index] = false;
+//                    nodeList.add(e.end);
+//                    dfs(root, e.end, nodeList);
                 }
             } else {
                 nodeList.add(e.end);
                 dfs(root, e.end, nodeList);
             }
             index = e.next;
+
             if (index < 0) {
                 nodeList.remove(node);
                 return;
             }
         }
+        visited.add(root);
+
+    }
+
+    private List<Integer> change(List<Integer> list) {
+        int min = 0;
+        for (int i = 1; i < list.size();i++) {
+            if (list.get(i) < list.get(min))
+                min = i;
+        }
+        List<Integer> l = new ArrayList<>(list.size());
+        for (int i = 0; i < list.size() - min; i++) {
+            l.add(list.get(min+i));
+        }
+        for (int i = 0; i < min; i++) {
+            l.add(list.get(i));
+        }
+        return l;
     }
 
     private void merge(int node, LinkedHashSet<Integer> ls, LinkedHashSet<Integer> nodeList, LinkedHashSet list) {
@@ -190,7 +201,7 @@ public class Graph {
     }
 
     //将结果输出至文件
-    public void output(String filename, List<LinkedHashSet<Integer>> path) {
+    public void output(String filename, List<List<Integer>> path) {
         try {
             File file = new File(filename);
 
@@ -200,7 +211,7 @@ public class Graph {
             BufferedWriter bufferedWriter = new BufferedWriter(fw);
             bufferedWriter.write(String.valueOf(path.size()));
             bufferedWriter.newLine();
-            for (LinkedHashSet<Integer> list : path) {
+            for (List<Integer> list : path) {
                 bufferedWriter.write(list.toString());
                 bufferedWriter.newLine();
             }

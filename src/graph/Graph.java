@@ -22,14 +22,13 @@ public class Graph {
     public Edge[] edges = new Edge[MaxEdges];
     public int cnt;
     boolean[] visitedEdges;
-    private int minNode = -1;
     public List<List<Integer>> path;
     private String inputFileName;
     private Logger logger;
     final private int MinLen = 3;  //环的最小长度
     final private int MaxLen = 7;  //环的最大长度
     Map<Integer, Integer> head = new HashMap<>();
-    Map<Integer, Boolean> inLoop;
+
     Set<Integer> visited = new HashSet<>();
 //    Map<Integer, LinkedHashSet<Integer>> loop;  //每个点的环路
     Set<Integer> endNodesSet;
@@ -46,7 +45,6 @@ public class Graph {
 
         visitedEdges = new boolean[cnt];
         path = new LinkedList<>();
-//        inLoop = new HashMap<>();
     }
 
     //读取文件，按照链式前向星的方法为图添加边
@@ -82,31 +80,18 @@ public class Graph {
         sort(path);
     }
 
-    private void sort(List<List<Integer>> path) {
-        Collections.sort(path, new Comparator<List<Integer>>() {
-            @Override
-            public int compare(List<Integer> o1, List<Integer> o2) {
-                if (o1.size() != o2.size()) return o1.size()-o2.size();
-                else {
-                    for (int i = 0; i < o1.size(); i++) {
-                        if (o1.get(i) != o2.get(i) ) return o1.get(i) - o2.get(i);
-                    }
-                }
-                return 0;
-            }
-        });
-    }
-
     //dfs寻找长度为3~7的环路
     public void dfs(int root, int node, LinkedHashSet<Integer> nodeList) {
         if (!head.containsKey(node)) return;
         int index = head.get(node);
 //        if (visitedEdges[index]) return ;
         if (index < 0) return;
+        visited.add(node);
         while (index != -1) {
             Edge e = edges[index];
             visitedEdges[index] = true;
             if (nodeList.contains(e.end)) {
+
                 List<Integer> list = new ArrayList<>(7);
                 boolean flag = false;
                 for (int x : nodeList) {  //此处可加入路径长度计数器，避免list的构建
@@ -123,12 +108,11 @@ public class Graph {
                     visitedEdges[index] = false;
                 } else {
                     visitedEdges[index] = false;
-//                    nodeList.add(e.end);
-//                    dfs(root, e.end, nodeList);
                 }
             } else {
                 nodeList.add(e.end);
                 dfs(root, e.end, nodeList);
+                visitedEdges[index] = false;
             }
             index = e.next;
 
@@ -137,7 +121,7 @@ public class Graph {
                 return;
             }
         }
-        visited.add(root);
+
 
     }
 
@@ -157,47 +141,19 @@ public class Graph {
         return l;
     }
 
-    private void merge(int node, LinkedHashSet<Integer> ls, LinkedHashSet<Integer> nodeList, LinkedHashSet list) {
-        int indexNodeInNodeList = -1;
-        int indexStartInNodeList = -1;
-        int indexNodeInLs = -1;
-        int indexStartInLs = -1;
-        int startNode = -1;
-        int c = -1;
-        for (int x : ls) {
-            c++;
-            if (indexNodeInLs > 0) list.add(x);//添加末尾元素
-            if (indexStartInLs < 0 && nodeList.contains(x)) {
-                indexStartInLs = c;
-                startNode = x;
+    private void sort(List<List<Integer>> path) {
+        Collections.sort(path, new Comparator<List<Integer>>() {
+            @Override
+            public int compare(List<Integer> o1, List<Integer> o2) {
+                if (o1.size() != o2.size()) return o1.size()-o2.size();
+                else {
+                    for (int i = 0; i < o1.size(); i++) {
+                        if (o1.get(i) != o2.get(i) ) return o1.get(i) - o2.get(i);
+                    }
+                }
+                return 0;
             }
-            if (x == node) {
-                indexNodeInLs = c;
-            }
-        }
-        c = -1;
-        boolean flag = false;
-        for (int x : nodeList) {
-            c++;
-            if (flag) list.add(x);
-            if (!flag && x == startNode) {
-                indexStartInNodeList = c;
-                flag = true;
-            }
-            if (x == node) {
-                indexNodeInNodeList = c;
-                break;
-            }
-        }
-        int len = indexNodeInNodeList-indexStartInNodeList+ls.size()-indexNodeInLs+indexStartInLs;
-        if (len < 3 || len > 7) return;
-        c = -1;
-        for (int x : ls) {
-            c++;
-            if (c < indexStartInLs) list.add(x);
-            else break;
-        }
-
+        });
     }
 
     //将结果输出至文件
@@ -221,7 +177,7 @@ public class Graph {
         }
     }
     public static void main(String[] args) {
-        String inputFile = "src/data/test.txt";
+        String inputFile = "src/data/test_data.txt";
         String outputFile = "src/data/answer.txt";
         Graph graph = new Graph(inputFile);
         graph.findLoop();

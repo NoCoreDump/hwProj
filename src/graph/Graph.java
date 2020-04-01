@@ -21,8 +21,9 @@ public class Graph {
     final int MaxEdges = 5100;
     public Edge[] edges = new Edge[MaxEdges];
     public int cnt;
-    boolean[] visitedEdges;
+//    boolean[] visitedEdges;
     public List<List<Integer>> path;
+    public LinkedHashSet<String> strPath;
     private String inputFileName;
     private Logger logger;
     final private int MinLen = 3;  //环的最小长度
@@ -30,7 +31,6 @@ public class Graph {
     Map<Integer, Integer> head = new HashMap<>();
 
     Set<Integer> visited = new HashSet<>();
-//    Map<Integer, LinkedHashSet<Integer>> loop;  //每个点的环路
     Set<Integer> endNodesSet;
     public Graph(String inputFileName){
         logger = Logger.getLogger("Graph");
@@ -42,9 +42,8 @@ public class Graph {
         } catch (IOException e) {
             logger.info("Fail: loadFile...");
         }
-
-        visitedEdges = new boolean[cnt];
         path = new LinkedList<>();
+        strPath = new LinkedHashSet<>();
     }
 
     //读取文件，按照链式前向星的方法为图添加边
@@ -55,7 +54,6 @@ public class Graph {
         String lineText = null;
         while ((lineText = bufferedReader.readLine()) != null) {
             String[] data = lineText.split(",");
-//            System.out.println(Arrays.toString(data) + "cnt: " + cnt);
             addEdge(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]));
 
         }
@@ -78,18 +76,17 @@ public class Graph {
             dfs(node, node, nodeList);
         }
         sort(path);
+
     }
 
     //dfs寻找长度为3~7的环路
     public void dfs(int root, int node, LinkedHashSet<Integer> nodeList) {
         if (!head.containsKey(node)) return;
         int index = head.get(node);
-//        if (visitedEdges[index]) return ;
         if (index < 0) return;
         visited.add(node);
         while (index != -1) {
             Edge e = edges[index];
-            visitedEdges[index] = true;
             if (nodeList.contains(e.end)) {
 
                 List<Integer> list = new ArrayList<>(7);
@@ -105,14 +102,10 @@ public class Graph {
                 }
                 if (list.size()<=MaxLen && list.size()>=MinLen) {
                     path.add(change(list));
-                    visitedEdges[index] = false;
-                } else {
-                    visitedEdges[index] = false;
                 }
             } else {
                 nodeList.add(e.end);
                 dfs(root, e.end, nodeList);
-                visitedEdges[index] = false;
             }
             index = e.next;
 
@@ -158,6 +151,9 @@ public class Graph {
 
     //将结果输出至文件
     public void output(String filename, List<List<Integer>> path) {
+        for (List<Integer> l : path) {
+            strPath.add(l.toString());
+        }
         try {
             File file = new File(filename);
 
@@ -165,10 +161,10 @@ public class Graph {
                 file.createNewFile();
             FileWriter fw = new FileWriter(file.getAbsoluteFile());
             BufferedWriter bufferedWriter = new BufferedWriter(fw);
-            bufferedWriter.write(String.valueOf(path.size()));
+            bufferedWriter.write(String.valueOf(strPath.size()));
             bufferedWriter.newLine();
-            for (List<Integer> list : path) {
-                bufferedWriter.write(list.toString());
+            for (String s : strPath) {
+                bufferedWriter.write(s);
                 bufferedWriter.newLine();
             }
             bufferedWriter.close();
@@ -177,7 +173,7 @@ public class Graph {
         }
     }
     public static void main(String[] args) {
-        String inputFile = "src/data/test_data.txt";
+        String inputFile = "src/data/test.txt";
         String outputFile = "src/data/answer.txt";
         Graph graph = new Graph(inputFile);
         graph.findLoop();
@@ -186,7 +182,7 @@ public class Graph {
 //        }
 //        System.out.println();
         graph.output(outputFile, graph.path);
-        System.out.println(graph.path.size());
+        System.out.println(graph.strPath.size());
 
     }
 }

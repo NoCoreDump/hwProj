@@ -173,8 +173,10 @@ public class Graph {
         }
     }
     public static void main(String[] args) {
-        String inputFile = "src/data/test.txt";
+        String inputFile = "src/data/bigData1k_6944.txt";
         String outputFile = "src/data/answer.txt";
+//        String inputFile = "/data/test_data.txt";
+//        String outputFile = "/projects/student/result.txt";
         Graph graph = new Graph(inputFile);
         graph.findLoop();
 //        for (Edge e : graph.edges) {
@@ -182,7 +184,7 @@ public class Graph {
 //        }
 //        System.out.println();
         graph.output(outputFile, graph.path);
-        System.out.println(graph.strPath.size());
+//        System.out.println(graph.strPath.size());
 
     }
 }

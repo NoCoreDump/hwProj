@@ -64,7 +64,13 @@ public class Graph {
         long endTime = System.currentTimeMillis();
         System.out.println("read file and create graph: " + (double) (endTime - startTime) / 1000);
     }
-
+    /*
+    * @Description add edge set
+    * @param null
+    * @Return
+    * @Author sunwb
+    * @Date 2020/3/29
+    */
     public void addEdge(int u, int v, int w) {
         if (!head.containsKey(u))
             head.put(u, -1);
@@ -95,7 +101,6 @@ public class Graph {
         while (index != -1) {
             Edge e = edges[index];
             if (nodeList.contains(e.end)) {
-
                 List<Integer> list = new ArrayList<>(7);
                 boolean flag = false;
                 for (int x : nodeList) {  //此处可加入路径长度计数器，避免list的构建
@@ -115,16 +120,19 @@ public class Graph {
                 dfs(root, e.end, nodeList);
             }
             index = e.next;
-
             if (index < 0) {
                 nodeList.remove(node);
                 return;
             }
         }
-
-
     }
-
+    /*
+    * @Description 改变list的顺序，以最小节点开始
+    * @param list ：一条循环路径
+    * @Return java.util.List<java.lang.Integer>
+    * @Author sunwb
+    * @Date 2020/4/2 23:08
+    **/
     private List<Integer> change(List<Integer> list) {
         int min = 0;
         for (int i = 1; i < list.size();i++) {
@@ -156,8 +164,15 @@ public class Graph {
         });
     }
 
-    //将结果输出至文件
-    public void output(String filename, List<List<Integer>> path) {
+    /*
+    * @Description 将结果输出至文件
+    * @param filename
+    * @param path
+    * @Return void
+    * @Author sunwb
+    * @Date 2020/4/2 23:09
+    **/
+    public void output(String filename) {
         long start = System.currentTimeMillis();
         for (List<Integer> l : path) {
             String s = l.toString();
@@ -167,7 +182,6 @@ public class Graph {
         System.out.println("del the same list: " + (double)(e1 - start)/1000);
         try {
             File file = new File(filename);
-
             if (!file.exists())
                 file.createNewFile();
             FileWriter fw = new FileWriter(file.getAbsoluteFile());
@@ -187,13 +201,13 @@ public class Graph {
     }
 
     public static void main(String[] args) {
-        String inputFile = "src/data/BigData1k_6944.txt";
+        String inputFile = "src/data/test_data.txt";
         String outputFile = "src/data/answer.txt";
 //        String inputFile = "/data/test_data.txt";
 //        String outputFile = "/projects/student/result.txt";
         Graph graph = new Graph(inputFile);
         graph.findLoop();
-        graph.output(outputFile, graph.path);
+        graph.output(outputFile);
         System.out.println("dfs调用次数：" + graph.dfsCount);
 
     }

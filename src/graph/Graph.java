@@ -32,6 +32,9 @@ public class Graph {
 
     Set<Integer> visited = new HashSet<>();
     Set<Integer> endNodesSet;
+
+
+    public int dfsCount = 0;
     public Graph(String inputFileName){
         logger = Logger.getLogger("Graph");
         cnt = 0;
@@ -48,6 +51,7 @@ public class Graph {
 
     //读取文件，按照链式前向星的方法为图添加边
     public void loadFile() throws IOException {
+        long startTime = System.currentTimeMillis();
         File f = new File(inputFileName);
         InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(f), "utf-8");
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -57,6 +61,8 @@ public class Graph {
             addEdge(Integer.parseInt(data[0]), Integer.parseInt(data[1]), Integer.parseInt(data[2]));
 
         }
+        long endTime = System.currentTimeMillis();
+        System.out.println("read file and create graph: " + (double) (endTime - startTime) / 1000);
     }
 
     public void addEdge(int u, int v, int w) {
@@ -81,6 +87,7 @@ public class Graph {
 
     //dfs寻找长度为3~7的环路
     public void dfs(int root, int node, LinkedHashSet<Integer> nodeList) {
+        dfsCount++;
         if (!head.containsKey(node)) return;
         int index = head.get(node);
         if (index < 0) return;
@@ -151,9 +158,13 @@ public class Graph {
 
     //将结果输出至文件
     public void output(String filename, List<List<Integer>> path) {
+        long start = System.currentTimeMillis();
         for (List<Integer> l : path) {
-            strPath.add(l.toString());
+            String s = l.toString();
+            strPath.add(s.substring(1, s.length()- 1));
         }
+        long e1 = System.currentTimeMillis();
+        System.out.println("del the same list: " + (double)(e1 - start)/1000);
         try {
             File file = new File(filename);
 
@@ -171,20 +182,19 @@ public class Graph {
         } catch (IOException e) {
             System.out.println("Fail: create file!");
         }
+        long e2 = System.currentTimeMillis();
+        System.out.println("output file: " + (double)(e2 - start)/1000);
     }
+
     public static void main(String[] args) {
-        String inputFile = "src/data/bigData1k_6944.txt";
+        String inputFile = "src/data/BigData1k_6944.txt";
         String outputFile = "src/data/answer.txt";
 //        String inputFile = "/data/test_data.txt";
 //        String outputFile = "/projects/student/result.txt";
         Graph graph = new Graph(inputFile);
         graph.findLoop();
-//        for (Edge e : graph.edges) {
-//            if (e != null)System.out.println(e.toString());
-//        }
-//        System.out.println();
         graph.output(outputFile, graph.path);
-//        System.out.println(graph.strPath.size());
+        System.out.println("dfs调用次数：" + graph.dfsCount);
 
     }
 }

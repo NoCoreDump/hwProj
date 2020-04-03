@@ -25,6 +25,7 @@ public class Graph {
     public List<List<Integer>> path;
     public LinkedHashSet<String> strPath;
     private String inputFileName;
+    private String outputFileName;
     private Logger logger;
     final private int MinLen = 3;  //环的最小长度
     final private int MaxLen = 7;  //环的最大长度
@@ -32,23 +33,45 @@ public class Graph {
 
     Set<Integer> visited = new HashSet<>();
     Set<Integer> endNodesSet;
-
-
+    //tarjan
+    int visitTime = 0;
+    Deque<Integer> stack = new ArrayDeque<>();
+    Set<Integer> stackSet = new HashSet<>();
+    public List<List<Integer>> tarRes = new LinkedList<>();
+    Map<Integer, Integer> dfn = new HashMap<>(head.size());
+    Map<Integer, Integer> low = new HashMap<>(head.size());
+    Set<Integer> tarVisited = new HashSet<>();
     public int dfsCount = 0;
-    public Graph(String inputFileName){
-        logger = Logger.getLogger("Graph");
-        cnt = 0;
-        this.inputFileName = inputFileName;
-        endNodesSet = new HashSet<>();
+    public Graph(String inputFileName, String outputFileName){
+        init(inputFileName, outputFileName);
+
         try {
             loadFile();
         } catch (IOException e) {
             logger.info("Fail: loadFile...");
         }
-        path = new LinkedList<>();
-        strPath = new LinkedHashSet<>();
+        long s = System.currentTimeMillis();
+
+        for (int node : head.keySet()) {
+            if (!endNodesSet.contains(node) || tarVisited.contains(node)) continue;
+            tarjan(node);
+        }
+        long e = System.currentTimeMillis();
+        System.out.println("tarjan time: " + (double) (e - s) / 1000);
+//        findLoop();
+//        output();
+//        System.out.println("dfs调用次数：" + dfsCount);
     }
 
+    public void init(String inputFileName, String outputFileName) {
+        logger = Logger.getLogger("Graph");
+        cnt = 0;
+        path = new LinkedList<>();
+        strPath = new LinkedHashSet<>();
+        this.inputFileName = inputFileName;
+        this.outputFileName = outputFileName;
+        endNodesSet = new HashSet<>();
+    }
     //读取文件，按照链式前向星的方法为图添加边
     public void loadFile() throws IOException {
         long startTime = System.currentTimeMillis();
@@ -64,6 +87,7 @@ public class Graph {
         }
         long endTime = System.currentTimeMillis();
         System.out.println("read file and create graph: " + (double) (endTime - startTime) / 1000);
+        System.out.println("edges num: " + cnt);
     }
     /*
     * @Description add edge set
@@ -92,7 +116,6 @@ public class Graph {
         long end = System.currentTimeMillis();
         System.out.println("findLoop time: " + (double) (end - start) / 1000);
         sort(path);
-
     }
 
     //dfs寻找长度为3~7的环路
@@ -176,7 +199,7 @@ public class Graph {
     * @Author sunwb
     * @Date 2020/4/2 23:09
     **/
-    public void output(String filename) {
+    public void output() {
         long start = System.currentTimeMillis();
         for (List<Integer> l : path) {
             String s = l.toString();
@@ -185,7 +208,7 @@ public class Graph {
         long e1 = System.currentTimeMillis();
         System.out.println("del the same list: " + (double)(e1 - start)/1000);
         try {
-            File file = new File(filename);
+            File file = new File(outputFileName);
             if (!file.exists())
                 file.createNewFile();
             FileWriter fw = new FileWriter(file.getAbsoluteFile());
@@ -204,15 +227,68 @@ public class Graph {
         System.out.println("output file: " + (double)(e2 - start)/1000);
     }
 
+    /*tarjan(u){
+　　DFN[u]=Low[u]=++Index // 为节点u设定次序编号和Low初值
+　　Stack.push(u)   // 将节点u压入栈中
+　　for each (u, v) in E // 枚举每一条边
+　　　　if (v is not visted) // 如果节点v未被访问过
+　　　　　　　　tarjan(v) // 继续向下找
+　　　　　　　　Low[u] = min(Low[u], Low[v])
+　　　　else if (v in S) // 如果节点u还在栈内
+　　　　　　　　Low[u] = min(Low[u], DFN[v])
+　　if (DFN[u] == Low[u]) // 如果节点u是强连通分量的根
+　　repeat v = S.pop  // 将v退栈，为该强连通分量中一个顶点
+　　print v
+　　until (u== v)
+    }*/
+
+    public void tarjan(int u) {
+
+            dfn.put(u, visitTime);
+            low.put(u, visitTime);
+            visitTime++;
+            stack.push(u);
+            stackSet.add(u);
+            tarVisited.add(u);
+            if (!head.containsKey(u)) return;
+            int index = head.get(u);
+            if (index < 0) return;
+            while (index != -1) {
+                if (!tarVisited.contains(edges[index].end)) {
+                    tarjan(edges[index].end);
+                    low.put(u, Math.min(low.get(u), low.get(edges[index].end)));
+                } else if (stackSet.contains(edges[index].end)) {
+                    low.put(u, Math.min(low.get(u), dfn.get(edges[index].end)));
+                }
+                index = edges[index].next;
+            }
+
+            if (dfn.get(u).equals(low.get(u))) {
+
+                List<Integer> list = new LinkedList<>();
+                int n = stack.peek();
+                if (n == u) {
+                    list.add(0, n);
+                    stack.pop();
+                    stackSet.remove(n);
+                    tarRes.add(list);
+                    return;
+                }
+                while (n != u) {
+                    n = stack.pop();
+                    stackSet.remove(n);
+                    list.add(0, n);
+                }
+                if (list.size()>0) tarRes.add(list);
+            }
+
+    }
     public static void main(String[] args) {
         String inputFile = "src/data/test_data.txt";
         String outputFile = "src/data/answer.txt";
 //        String inputFile = "/data/test_data.txt";
 //        String outputFile = "/projects/student/result.txt";
-        Graph graph = new Graph(inputFile);
-        graph.findLoop();
-        graph.output(outputFile);
-        System.out.println("dfs调用次数：" + graph.dfsCount);
+        Graph graph = new Graph(inputFile, outputFile);
 
     }
 }

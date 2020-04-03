@@ -52,6 +52,7 @@ public class Graph {
     //读取文件，按照链式前向星的方法为图添加边
     public void loadFile() throws IOException {
         long startTime = System.currentTimeMillis();
+        System.out.println("inputFile: " + inputFileName);
         File f = new File(inputFileName);
         InputStreamReader inputStreamReader = new InputStreamReader(new FileInputStream(f), "utf-8");
         BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
@@ -81,12 +82,15 @@ public class Graph {
     }
 
     public void findLoop(){
+        long start = System.currentTimeMillis();
         for (int node : head.keySet()) {
             if (!endNodesSet.contains(node) || visited.contains(node)) continue;
             LinkedHashSet<Integer> nodeList = new LinkedHashSet<>();
             nodeList.add(node);
             dfs(node, node, nodeList);
         }
+        long end = System.currentTimeMillis();
+        System.out.println("findLoop time: " + (double) (end - start) / 1000);
         sort(path);
 
     }

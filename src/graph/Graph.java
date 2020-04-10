@@ -1,5 +1,7 @@
 package graph;
 
+import utils.Utils;
+
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -33,7 +35,8 @@ public class Graph {
 
     Set<Integer> visited = new HashSet<>();
     Set<Integer> endNodesSet;
-    //tarjan
+    public int dfsCount = 0;
+    /*-------------------------------- tarjan 变量--------------------------------------------*/
     int visitTime = 0;
     Deque<Integer> stack = new ArrayDeque<>();
     Set<Integer> stackSet = new HashSet<>();
@@ -41,26 +44,36 @@ public class Graph {
     Map<Integer, Integer> dfn = new HashMap<>(head.size());
     Map<Integer, Integer> low = new HashMap<>(head.size());
     Set<Integer> tarVisited = new HashSet<>();
-    public int dfsCount = 0;
+    int resCnt = 0;
+
+
     public Graph(String inputFileName, String outputFileName){
         init(inputFileName, outputFileName);
-
         try {
             loadFile();
         } catch (IOException e) {
             logger.info("Fail: loadFile...");
         }
-        long s = System.currentTimeMillis();
 
+//---------------------------tarjan------------------------
+        Tarjan();
+//        ----------  dfs --------------
+//        findLoop();
+//        output();
+//        System.out.println("dfs调用次数：" + dfsCount);
+
+    }
+
+    private void Tarjan() {
+        long s = System.currentTimeMillis();
         for (int node : head.keySet()) {
             if (!endNodesSet.contains(node) || tarVisited.contains(node)) continue;
             tarjan(node);
         }
         long e = System.currentTimeMillis();
         System.out.println("tarjan time: " + (double) (e - s) / 1000);
-//        findLoop();
-//        output();
-//        System.out.println("dfs调用次数：" + dfsCount);
+        System.out.println("强连通分量个数：" + tarRes.size());
+        sort(tarRes);
     }
 
     public void init(String inputFileName, String outputFileName) {
@@ -99,7 +112,7 @@ public class Graph {
     public void addEdge(int u, int v, int w) {
         if (!head.containsKey(u))
             head.put(u, -1);
-        Edge e = new Edge(head.get(u), v, w);
+        Edge e = new Edge(head.get(u), v, 0);
         edges[cnt] = e;
         head.put(u, cnt++);
         endNodesSet.add(v);
@@ -241,9 +254,14 @@ public class Graph {
 　　print v
 　　until (u== v)
     }*/
-
+    /*
+    * @Description tarjan算法，伪代码见上
+    * @param u 当前遍历到的节点
+    * @Return void
+    * @Author sunwb
+    * @Date 2020/4/3 20:41
+    **/
     public void tarjan(int u) {
-
             dfn.put(u, visitTime);
             low.put(u, visitTime);
             visitTime++;
@@ -252,26 +270,23 @@ public class Graph {
             tarVisited.add(u);
             if (!head.containsKey(u)) return;
             int index = head.get(u);
-            if (index < 0) return;
             while (index != -1) {
                 if (!tarVisited.contains(edges[index].end)) {
                     tarjan(edges[index].end);
                     low.put(u, Math.min(low.get(u), low.get(edges[index].end)));
                 } else if (stackSet.contains(edges[index].end)) {
-                    low.put(u, Math.min(low.get(u), dfn.get(edges[index].end)));
+                    low.put(u, Math.min(low.get(u), low.get(edges[index].end)));
                 }
                 index = edges[index].next;
             }
-
             if (dfn.get(u).equals(low.get(u))) {
-
                 List<Integer> list = new LinkedList<>();
                 int n = stack.peek();
                 if (n == u) {
-                    list.add(0, n);
+//                    list.add(0, n);
                     stack.pop();
                     stackSet.remove(n);
-                    tarRes.add(list);
+//                    tarRes.add(list);
                     return;
                 }
                 while (n != u) {
@@ -279,9 +294,176 @@ public class Graph {
                     stackSet.remove(n);
                     list.add(0, n);
                 }
-                if (list.size()>0) tarRes.add(list);
+                if (list.size()>2) tarRes.add(list); //大于等于3的环才添加
+            }
+    }
+
+    public void tarJan() {
+        Deque<Integer> nodeStack = new ArrayDeque<>();
+        Map<Integer, Integer> preNode = new HashMap<>(head.size());
+        for (int node : head.keySet()) {
+            if (!endNodesSet.contains(node) || tarVisited.contains(node)) continue;
+            nodeStack.push(node);
+            int curNode = -1;
+            while (!nodeStack.isEmpty()) {
+                int u = nodeStack.pop();
+                if (curNode == u) break;
+                curNode = u;
+                if (tarVisited.contains(u) || !head.containsKey(u)) continue;
+                dfn.put(u, visitTime);
+                low.put(u, visitTime);
+                visitTime++;
+                tarVisited.add(u);
+                stack.push(u);
+                stackSet.add(u);
+                int index = head.get(u);
+                while (index != -1) {
+                    int end = edges[index].end;
+                    if (!tarVisited.contains(end)) {
+                        nodeStack.push(end);
+                        preNode.put(end, u);
+                    } else if (stackSet.contains(end)) {
+                        low.put(u, Math.min(low.get(u), low.get(end)));
+                    }
+                    index = edges[index].next;
+                }
             }
 
+        }
+        printTarInfo();
+    }
+
+    public void tarjan() {
+        long s = System.currentTimeMillis();
+        Set<Integer> visEdges = new HashSet<>();
+        for (int headNode : head.keySet()) {
+            if (!endNodesSet.contains(headNode) || tarVisited.contains(headNode)) continue;
+            Map<Integer, Integer> preNode = new HashMap<>();
+            stack.add(headNode);
+            preNode.put(headNode, headNode);
+            while (!stack.isEmpty()) {
+                if (!tarVisited.contains(headNode)) {
+                    dfn.put(headNode, visitTime);
+                    low.put(headNode, visitTime);
+                    visitTime++;
+                    tarVisited.add(headNode);
+                    stackSet.add(headNode);
+                    stack.push(headNode);
+                }
+                if (!head.containsKey(headNode)) {
+                    headNode = preNode.get(headNode);
+                    continue;
+                }
+                int index = head.get(headNode);
+                while (index != -1) {
+                    if (visEdges.contains(index)) {
+                        index = edges[index].next;
+                        if (index < 0) {
+                            updateStack(headNode);
+
+                            headNode = preNode.get(headNode);
+                            break;
+                        }
+                        continue;
+                    }
+                    visEdges.add(index);
+                    int end = edges[index].end;
+                    if (!tarVisited.contains(end)) {
+                        preNode.put(end, headNode);
+                        headNode = end;
+                        break;
+                    } else if (stackSet.contains(end)) {
+                        low.put(headNode, Math.min(low.get(headNode), low.get(end)));
+                        updateLow(end, headNode, low.get(headNode));
+                    }
+                    index = edges[index].next;
+                    if (index < 0) {
+                        updateStack(headNode);
+                        headNode = preNode.get(headNode);
+                        break;
+                    }
+                }
+
+            }
+
+        }
+        long e = System.currentTimeMillis();
+        System.out.println("tarjan time: " + (double) (e - s) / 1000);
+        System.out.println("强连通分量个数：" + tarRes.size());
+        sort(tarRes);
+//        printTarInfo();
+
+    }
+
+    private void updateStack(int headNode) {
+        if (dfn.get(headNode).equals(low.get(headNode))) {
+            List<Integer> list = new LinkedList<>();
+            int n = stack.peek();
+            if (n == headNode) {
+                stack.pop();
+                stackSet.remove(n);
+            }
+            while (n != headNode) {
+                n = stack.pop();
+                stackSet.remove(n);
+                list.add(0, n);
+            }
+            if (list.size()>2) tarRes.add(list); //大于等于3的环才添加
+        }
+    }
+
+
+    private void updateLow(int end, int headNode, int val) {
+        List<Integer> list = new LinkedList<>();
+        if (stack.isEmpty()) return;
+        while (!stack.isEmpty() && stack.peek() != end) {
+            int n = stack.pop();
+            low.put(n, val);
+            list.add(0, n);
+        }
+        for (int n : list) {
+            stack.push(n);
+        }
+    }
+
+    private void printTarInfo() {
+        System.out.println("强连通分量个数：" + tarRes.size());
+        for (List<Integer> list : tarRes) {
+            System.out.println(list.toString());
+        }
+//        System.out.println("--------low------- : \n" + low.toString());
+    }
+
+
+    //4.7-22:36  通过low值区分强连通不可取
+    //tarjan获取强连通分量值
+    public void getTarRes() {
+        List<Map.Entry<Integer, Integer>> entryList = Utils.mapSort(low);
+        List<Integer> list = new ArrayList<>();
+        int curLow = -1;
+        for (Map.Entry<Integer, Integer> e : entryList) {
+            if (list.isEmpty()) {
+                list.add(e.getKey());
+                curLow = e.getValue();
+                continue;
+            }
+            if (curLow == e.getValue()) {
+                list.add(e.getKey());
+            } else {
+                List<Integer> l = new ArrayList<>(list.size());
+//                Collections.copy(l, list);
+                l.addAll(list);
+                tarRes.add(l);
+                list.clear();
+                list.add(e.getKey());
+                curLow = e.getValue();
+            }
+
+        }
+        List<Integer> l = new ArrayList<>(list.size());
+//            Collections.copy(l, list);
+        l.addAll(list);
+        tarRes.add(l);
     }
     public static void main(String[] args) {
         String inputFile = "src/data/test_data.txt";

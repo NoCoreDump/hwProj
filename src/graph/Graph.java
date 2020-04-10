@@ -20,7 +20,7 @@ class Edge {
     }
 }
 public class Graph {
-    final int MaxEdges = 5100;
+    final int MaxEdges = 500000;
     public Edge[] edges = new Edge[MaxEdges];
     public int cnt;
 //    boolean[] visitedEdges;
@@ -56,7 +56,7 @@ public class Graph {
         }
 
 //---------------------------tarjan------------------------
-        Tarjan();
+        tarjan();
 //        ----------  dfs --------------
 //        findLoop();
 //        output();
@@ -74,6 +74,7 @@ public class Graph {
         System.out.println("tarjan time: " + (double) (e - s) / 1000);
         System.out.println("强连通分量个数：" + tarRes.size());
         sort(tarRes);
+        output("src/data/Tarjan.txt", tarRes);
     }
 
     public void init(String inputFileName, String outputFileName) {
@@ -240,7 +241,8 @@ public class Graph {
         System.out.println("output file: " + (double)(e2 - start)/1000);
     }
 
-    /*tarjan(u){
+    /*--------------------------------------------------------------------
+    tarjan(u){
 　　DFN[u]=Low[u]=++Index // 为节点u设定次序编号和Low初值
 　　Stack.push(u)   // 将节点u压入栈中
 　　for each (u, v) in E // 枚举每一条边
@@ -253,7 +255,7 @@ public class Graph {
 　　repeat v = S.pop  // 将v退栈，为该强连通分量中一个顶点
 　　print v
 　　until (u== v)
-    }*/
+    }---------------------------------------------------------*/
     /*
     * @Description tarjan算法，伪代码见上
     * @param u 当前遍历到的节点
@@ -298,41 +300,13 @@ public class Graph {
             }
     }
 
-    public void tarJan() {
-        Deque<Integer> nodeStack = new ArrayDeque<>();
-        Map<Integer, Integer> preNode = new HashMap<>(head.size());
-        for (int node : head.keySet()) {
-            if (!endNodesSet.contains(node) || tarVisited.contains(node)) continue;
-            nodeStack.push(node);
-            int curNode = -1;
-            while (!nodeStack.isEmpty()) {
-                int u = nodeStack.pop();
-                if (curNode == u) break;
-                curNode = u;
-                if (tarVisited.contains(u) || !head.containsKey(u)) continue;
-                dfn.put(u, visitTime);
-                low.put(u, visitTime);
-                visitTime++;
-                tarVisited.add(u);
-                stack.push(u);
-                stackSet.add(u);
-                int index = head.get(u);
-                while (index != -1) {
-                    int end = edges[index].end;
-                    if (!tarVisited.contains(end)) {
-                        nodeStack.push(end);
-                        preNode.put(end, u);
-                    } else if (stackSet.contains(end)) {
-                        low.put(u, Math.min(low.get(u), low.get(end)));
-                    }
-                    index = edges[index].next;
-                }
-            }
-
-        }
-        printTarInfo();
-    }
-
+    /*
+    * @Description 非递归tarjan算法
+    * @param
+    * @Return void
+    * @Author sunwb
+    * @Date 2020/4/10 20:47
+    **/
     public void tarjan() {
         long s = System.currentTimeMillis();
         Set<Integer> visEdges = new HashSet<>();
@@ -360,7 +334,6 @@ public class Graph {
                         index = edges[index].next;
                         if (index < 0) {
                             updateStack(headNode);
-
                             headNode = preNode.get(headNode);
                             break;
                         }
@@ -383,18 +356,16 @@ public class Graph {
                         break;
                     }
                 }
-
             }
-
         }
         long e = System.currentTimeMillis();
         System.out.println("tarjan time: " + (double) (e - s) / 1000);
         System.out.println("强连通分量个数：" + tarRes.size());
         sort(tarRes);
+        output("src/data/tar_jan.txt", tarRes);
 //        printTarInfo();
-
     }
-
+    //存储强连通分量，并更新栈
     private void updateStack(int headNode) {
         if (dfn.get(headNode).equals(low.get(headNode))) {
             List<Integer> list = new LinkedList<>();
@@ -411,8 +382,7 @@ public class Graph {
             if (list.size()>2) tarRes.add(list); //大于等于3的环才添加
         }
     }
-
-
+    //更新环路节点的low值
     private void updateLow(int end, int headNode, int val) {
         List<Integer> list = new LinkedList<>();
         if (stack.isEmpty()) return;
@@ -434,36 +404,22 @@ public class Graph {
 //        System.out.println("--------low------- : \n" + low.toString());
     }
 
-
-    //4.7-22:36  通过low值区分强连通不可取
-    //tarjan获取强连通分量值
-    public void getTarRes() {
-        List<Map.Entry<Integer, Integer>> entryList = Utils.mapSort(low);
-        List<Integer> list = new ArrayList<>();
-        int curLow = -1;
-        for (Map.Entry<Integer, Integer> e : entryList) {
-            if (list.isEmpty()) {
-                list.add(e.getKey());
-                curLow = e.getValue();
-                continue;
+    public void output(String outFile, List<List<Integer>> res) {
+        try {
+            File file = new File(outFile);
+            if (!file.exists()) file.createNewFile();
+            FileWriter fw = new FileWriter(file.getAbsoluteFile());
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write(String.valueOf(res.size()));
+            bw.newLine();
+            for (List<Integer> l : res) {
+                bw.write(l.toString());
+                bw.newLine();
             }
-            if (curLow == e.getValue()) {
-                list.add(e.getKey());
-            } else {
-                List<Integer> l = new ArrayList<>(list.size());
-//                Collections.copy(l, list);
-                l.addAll(list);
-                tarRes.add(l);
-                list.clear();
-                list.add(e.getKey());
-                curLow = e.getValue();
-            }
-
+            bw.close();
+        } catch (IOException e) {
+            System.out.println("Fail: write to file!");
         }
-        List<Integer> l = new ArrayList<>(list.size());
-//            Collections.copy(l, list);
-        l.addAll(list);
-        tarRes.add(l);
     }
     public static void main(String[] args) {
         String inputFile = "src/data/test_data.txt";

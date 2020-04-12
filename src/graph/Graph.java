@@ -23,7 +23,6 @@ public class Graph {
     final int MaxEdges = 500000;
     public Edge[] edges = new Edge[MaxEdges];
     public int cnt;
-//    boolean[] visitedEdges;
     public List<List<Integer>> path;
     public LinkedHashSet<String> strPath;
     private String inputFileName;
@@ -56,7 +55,7 @@ public class Graph {
         }
 
 //---------------------------tarjan------------------------
-        tarjan();
+//        tarjan();
 //        ----------  dfs --------------
 //        findLoop();
 //        output();
@@ -421,12 +420,97 @@ public class Graph {
             System.out.println("Fail: write to file!");
         }
     }
+
+    /*
+    * @Description 按照python库networkx中的非递归tarjan逻辑实现，贼快
+    * @param
+    * @Return void
+    * @Author sunwb
+    * @Date 2020/4/12 17:05
+    **/
+    public void newTarjan() {
+        long s = System.currentTimeMillis();
+        int visTime = 0; //preorder counter;
+        Map<Integer, Integer> preorder = new HashMap<>();
+        Map<Integer, Integer> lowlink = new HashMap<>();
+        Map<Integer, Boolean> sccFound = new HashMap<>();
+        Deque<Integer> sccQueue = new ArrayDeque<>();
+        boolean[] visEdges = new boolean[cnt];
+        for (int node : head.keySet()) {
+            Deque<Integer> queue = new ArrayDeque<>();
+            if (!sccFound.containsKey(node)) {
+                queue.push(node);
+                while (!queue.isEmpty()) {
+                    int v = queue.peek();
+//                    System.out.println("V: " + v);
+                    if (!preorder.containsKey(v)) {
+                        preorder.put(v, ++visTime);
+//                        System.out.println("preorder: v-" + v + "  order-" + preorder.get(v));
+                    }
+                    boolean done = true;
+                    if (!head.containsKey(v)) {
+                        lowlink.put(v, preorder.get(v));
+                        queue.pop();
+                        continue;
+                    }
+                    int index = head.get(v);
+                    while (index != -1) {
+                        int w = edges[index].end;
+                        if (!preorder.containsKey(w)) {
+                            queue.push(w);
+                            done = false;
+                            break;
+                        }
+                        index = edges[index].next;
+                    }
+                    if(done) {
+                        lowlink.put(v, preorder.get(v));
+                        index = head.get(v);
+                        while (index != -1) {
+                            int w = edges[index].end;
+                            if (!sccFound.containsKey(w)) {
+                                if (preorder.get(w).intValue() > preorder.get(v).intValue()) {
+                                    lowlink.put(v, Math.min(lowlink.get(v), lowlink.get(w)));
+                                } else {
+                                    lowlink.put(v, Math.min(lowlink.get(v), preorder.get(w)));
+                                }
+                            }
+                            index = edges[index].next;
+                        }
+                        queue.pop();
+                        if (lowlink.get(v).equals(preorder.get(v))) {
+                            sccFound.put(v, true);
+                            List<Integer> scc = new ArrayList<>();
+                            scc.add(v);
+                            while (!sccQueue.isEmpty() && preorder.get(sccQueue.peek()).intValue() > preorder.get(v).intValue()) {
+                                int k = sccQueue.pop();
+                                sccFound.put(k, true);
+                                scc.add(k);
+                            }
+                            if (scc.size()>2) tarRes.add(scc);
+                        } else {
+                            sccQueue.push(v);
+                        }
+                    }
+                }
+            }
+
+        }
+        long e = System.currentTimeMillis();
+        System.out.println("tarjan time: " + (double) (e - s) / 1000);
+        System.out.println("强连通分量个数：" + tarRes.size());
+        sort(tarRes);
+//        System.out.println(tarRes.toString());
+//        output("src/data/newTarjan.txt", tarRes);
+
+    }
     public static void main(String[] args) {
-        String inputFile = "src/data/test_data.txt";
+        String inputFile = "src/data/test3mil.txt";
         String outputFile = "src/data/answer.txt";
 //        String inputFile = "/data/test_data.txt";
 //        String outputFile = "/projects/student/result.txt";
         Graph graph = new Graph(inputFile, outputFile);
+        graph.newTarjan();
 
     }
 }
